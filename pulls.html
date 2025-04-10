@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>User Pull Requests</title>
+</head>
+<body>
+    <div class="menu">
+        <!-- <div class="header">Open Pull Requests by <span id="username">sharktide</span></div> -->
+        <div id="pull-requests" class="content"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        ipcRenderer.on('pull-requests', (event, pullRequests) => {
+            const container = document.getElementById('pull-requests');
+            container.innerHTML = ''; // Clear previous content
+
+            pullRequests.forEach(pr => {
+                const item = document.createElement('div');
+                item.className = 'item';
+
+                item.innerHTML = `
+                    <div class="title">${pr.title}</div>
+                    <div class="details">
+                        Repository: ${pr.repository_url.split('/').slice(-1)}<br>
+                        Status: Open | Comments: ${pr.comments}
+                    </div>
+                    <div class="timestamp">Opened: ${new Date(pr.created_at).toLocaleDateString()}</div>
+                `;
+                item.onclick = () => {
+                    require('electron').shell.openExternal(pr.html_url); // Open the PR URL
+                };
+                container.appendChild(item);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>User Issues</title>
+</head>
+<body>
+    <div class="menu">
+        <!-- Optional header: <div class="header">Open Issues for <span id="username">sharktide</span></div> -->
+        <div id="user-issues" class="content"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Listen for issues data from the main process
+        ipcRenderer.on('user-issues', (event, issues) => {
+            const container = document.getElementById('user-issues');
+            container.innerHTML = ''; // Clear previous content
+
+            issues.forEach(issue => {
+                const item = document.createElement('div');
+                item.className = 'item';
+
+                item.innerHTML = `
+                    <div class="title">${issue.title}</div>
+                    <div class="details">
+                        Repository: ${issue.repository_url.split('/').slice(-1)}<br>
+                        Status: Open | Comments: ${issue.comments}
+                    </div>
+                    <div class="timestamp">Created: ${new Date(issue.created_at).toLocaleDateString()}</div>
+                `;
+
+                // Clicking the item opens the issue in the browser
+                item.onclick = () => {
+                    require('electron').shell.openExternal(issue.html_url); // Open the issue URL
+                };
+
+                container.appendChild(item);
+            });
+        });
+    </script>
+</body>
+</html>
