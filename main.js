@@ -2,7 +2,7 @@ const { app, BrowserWindow, Tray, nativeImage, ipcMain } = require('electron');
 const { Octokit } = require("@octokit/core");
 const path = require('path');
 const fs = require('fs');
-console.log(app.getPath('userData'));
+var AutoLaunch = require('auto-launch');
 
 const userDataPath = path.join(app.getPath('userData'), 'user-config.json');
 let trayPulls = null;
@@ -11,27 +11,23 @@ let windowPulls = null;
 let windowIssues = null;
 let userConfig = null;
 
-// Initialize Octokit
 let octokit;
 
-// Fetch or initialize user data
 function loadUserData() {
     if (fs.existsSync(userDataPath)) {
         userConfig = JSON.parse(fs.readFileSync(userDataPath));
         octokit = new Octokit({});
     } else {
-        userConfig = null; // First-time setup needed
+        userConfig = null;
     }
 }
 
-// Save user data
 function saveUserData(data) {
     fs.writeFileSync(userDataPath, JSON.stringify(data, null, 2));
     userConfig = data;
     octokit = new Octokit({});
 }
 
-// Fetch all open pull requests for the user
 async function fetchUserPullRequests() {
     try {
         const response = await octokit.request('GET /search/issues', {
@@ -45,7 +41,6 @@ async function fetchUserPullRequests() {
     }
 }
 
-// Fetch all open issues assigned to or created by the user
 async function fetchUserIssues() {
     try {
         const response = await octokit.request('GET /search/issues', {
@@ -59,7 +54,6 @@ async function fetchUserIssues() {
     }
 }
 
-// Create the pull requests window
 function createPullsWindow() {
     if (windowPulls && !windowPulls.isDestroyed()) return;
 
@@ -89,7 +83,6 @@ function createPullsWindow() {
     });
 }
 
-// Create the issues window
 function createIssuesWindow() {
     if (windowIssues && !windowIssues.isDestroyed()) return;
 
@@ -119,9 +112,7 @@ function createIssuesWindow() {
     });
 }
 
-// Create the tray icons
 function createTrayIcons() {
-    // Pull Requests Tray Icon
     const pullsIconPath = path.join(__dirname, 'pulls.png');
     const pullsTrayIcon = nativeImage.createFromPath(pullsIconPath).resize({ width: 20, height: 20 });
 
@@ -130,7 +121,6 @@ function createTrayIcons() {
     trayPulls.on('click', async () => {
         if (!windowPulls) createPullsWindow();
 
-        // Refetch pull requests before showing the window
         try {
             const pullRequests = await fetchUserPullRequests();
             windowPulls.webContents.send('pull-requests', pullRequests);
@@ -140,7 +130,6 @@ function createTrayIcons() {
         }
     });
 
-    // Issues Tray Icon
     const issuesIconPath = path.join(__dirname, 'issues.png');
     const issuesTrayIcon = nativeImage.createFromPath(issuesIconPath).resize({ width: 20, height: 20 });
 
@@ -149,7 +138,6 @@ function createTrayIcons() {
     trayIssues.on('click', async () => {
         if (!windowIssues) createIssuesWindow();
 
-        // Refetch issues before showing the window
         try {
             const issues = await fetchUserIssues();
             windowIssues.webContents.send('user-issues', issues);
@@ -170,7 +158,6 @@ app.on('ready', () => {
     }
 });
 
-// Show setup window for first-time users
 function showSetupWindow() {
     setupWindow = new BrowserWindow({
         width: 400,
@@ -186,10 +173,24 @@ function showSetupWindow() {
 
     ipcMain.once('setup-complete', (event, data) => {
         saveUserData(data);
-        createTrayIcons();
+        var sysTrayToolsAutoLaunch = new AutoLaunch({
+            name: 'Github SysTray Tools',
+        });
+        
+        sysTrayToolsAutoLaunch.enable();
+        sysTrayToolsAutoLaunch.isEnabled()
+        .then(function(isEnabled){
+            if(isEnabled){
+                return;
+            }
+            sysTrayToolsAutoLaunch.enable();
+        })
+        .catch(function(err){
+            {}
+        });
         function restartApp() {
             app.relaunch();
-            app.quit(); // or app.exit()
+            app.exit(); // or app.quit()
         }
         restartApp()
     });
@@ -198,3 +199,17 @@ function showSetupWindow() {
         setupWindow = null;
     });
 }
+
+// Copyright 2025 Rihaan Meher
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.

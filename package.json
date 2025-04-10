@@ -1,17 +1,44 @@
 {
-  "name": "github-tools",
+  "name": "github-systray-tools",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder"
   },
   "keywords": [],
   "author": "",
   "license": "Apache-2.0",
   "description": "",
+  "build": {
+    "appId": "com.sharktide.systray-github",
+    "productName": "Github Systray Tools",
+    "files": [
+      "**/*",
+      "dist/**/*",
+      "issues.html",
+      "pulls.html",
+      "setup.html",
+      "issues.png",
+      "pulls.png",
+      "main.js",
+      "style.css",
+      "LICENSE"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
   "dependencies": {
     "@octokit/core": "^6.1.5",
+    "auto-launch": "^5.0.6"
+  },
+  "devDependencies": {
     "electron": "^35.1.5",
-    "node-fetch": "^3.3.2"
+    "electron-builder": "^26.0.12"
   }
 }
